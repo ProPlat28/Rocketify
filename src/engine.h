@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <vector>
 
 // Minimal Unreal Engine 3 access for RocketLeague.exe. Offsets are discovered
 // at runtime by heuristics, not hardcoded, so game updates don't break them.
@@ -43,7 +44,18 @@ std::string ClassNameOf(uintptr_t obj);
 std::string FullNameOf(uintptr_t obj);
 uintptr_t FindInstance(const std::string& className);
 bool NativeMessageReady();
-void ShowNativeMessage(const wchar_t* title, const wchar_t* body, const wchar_t* button);
+bool CanShowNativeMessage();  // ready and no other dialog open (game thread)
+void ShowNativeMessage(const wchar_t* title, const wchar_t* body, const std::vector<std::wstring>& buttons, bool warning);
+bool HasWarningPopup();
+void AddOverrides(const char* list);  // "MainMenu.onSettings;...", before StartMenuInjector
+void SetMenuCallback(void (*fn)(const char* event));  // main menu entry clicked (game thread)
+uintptr_t FindFunction(const char* fullName);
+uintptr_t FindObject(const std::string& fullName, bool property);
+bool PropertyInfo(const std::string& fullName, int& offset, int& size);
+std::string NameText(int index, int number);
+int FindName(const std::string& text);
+int ParamOffset(uintptr_t fn, const char* name);
+bool IsDisabled();
 void RunOnGameThread(void (*fn)(void*), void* ctx);
 void CallFunction(uintptr_t obj, uintptr_t func, void* parms);
 

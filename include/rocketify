@@ -1,0 +1,3 @@
+// #include <rocketify> is the same as #include <rocketify.hpp>
+#pragma once
+#include "rocketify.hpp"

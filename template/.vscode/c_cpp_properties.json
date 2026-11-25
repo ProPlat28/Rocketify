@@ -1,0 +1,16 @@
+{
+    "version": 4,
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": ["${workspaceFolder}/**", "${userHome}/.rocketify/files/include"],
+            "cppStandard": "c++17"
+        },
+        {
+            "name": "Linux",
+            "includePath": ["${workspaceFolder}/**", "${userHome}/.rocketify/files/include"],
+            "defines": ["__declspec(x)="],
+            "cppStandard": "c++17"
+        }
+    ]
+}

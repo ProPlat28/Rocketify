@@ -6,7 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-VERSION="1.0.0"
+VERSION="0.0.2-alpha"
 CXX=x86_64-w64-mingw32-g++
 
 # On the host (e.g. Bazzite) MinGW lives in the "claude" distrobox: re-run there.
@@ -27,13 +27,33 @@ STATIC=(-static -static-libgcc -static-libstdc++ -s)
 
 echo "==> rocketify.dll"
 "$CXX" "${FLAGS[@]}" -shared -o "$OUT/rocketify.dll" \
-  src/rocketify.cpp src/engine.cpp src/input.cpp "${STATIC[@]}"
+  src/rocketify.cpp src/engine.cpp src/input.cpp src/splash.cpp "${STATIC[@]}"
 
 echo "==> Rocketify.exe"
-"$CXX" "${FLAGS[@]}" -municode -mwindows -o "$OUT/Rocketify.exe" src/launcher.cpp "${STATIC[@]}"
+"$CXX" "${FLAGS[@]}" -municode -mwindows -o "$OUT/Rocketify.exe" src/launcher.cpp "${STATIC[@]}" -lgdiplus -lgdi32
 
 echo "==> hello_mod.dll"
 "$CXX" "${FLAGS[@]}" -shared -o "$OUT/hello_mod.dll" examples/hello_mod.cpp "${STATIC[@]}"
+
+echo "==> rocketify command line tool"
+mkdir -p dist/cli
+# everything a mod is built with goes into the program itself
+{
+  echo 'static const struct { const char *path, *text; } kFiles[] = {'
+  for f in include/rocketify include/rocketify.h include/rocketify.hpp CMakeLists.txt cmake/mingw.cmake \
+           template/CMakeLists.txt template/.gitignore template/src/main.cpp \
+           template/.vscode/c_cpp_properties.json; do
+    printf '{"%s", R"_RKT_(' "$f"; cat "$f"; printf ')_RKT_"},\n'
+  done
+  echo '};'
+} > "$OUT/embedded.inc"
+echo '1 24 "cli/rocketify.manifest"' | x86_64-w64-mingw32-windres -o "$OUT/manifest.o"
+"$CXX" -O2 -std=c++17 -Wall -Iinclude -I"$OUT" -o dist/cli/rocketify.exe cli/rocketify.cpp "$OUT/manifest.o" "${STATIC[@]}"
+if command -v g++ >/dev/null 2>&1; then
+  g++ -O2 -std=c++17 -Wall -Iinclude -I"$OUT" -static -s -o dist/cli/rocketify cli/rocketify.cpp
+else
+  echo "   Linux version skipped: g++ not found"
+fi
 
 echo "==> Rocketify-Setup.exe (Windows setup wizard for Steam and Epic Games)"
 if command -v makensis >/dev/null 2>&1; then
@@ -43,13 +63,15 @@ else
 fi
 
 echo "==> rocketify-install.sh (Linux installer with the files above embedded)"
+# the script part of the installer is kept; only the embedded files are replaced
+TEMPLATE="$(sed '/^__PAYLOAD_BELOW__$/,$d' installer/rocketify-install.sh)"
 STAGE="$(mktemp -d)"
 mkdir -p "$STAGE/rocketify/mods"
 cp "$OUT/Rocketify.exe" "$STAGE/"
 cp "$OUT/rocketify.dll" "$STAGE/rocketify/"
 cp "$OUT/hello_mod.dll" "$STAGE/rocketify/mods/"
 {
-  sed "s/__VERSION__/$VERSION/" installer/install-linux.sh
+  printf '%s\n' "$TEMPLATE"
   echo "__PAYLOAD_BELOW__"
   tar -czf - -C "$STAGE" . | base64
 } > installer/rocketify-install.sh

@@ -12,7 +12,8 @@ SetCompressor /SOLID lzma
 !include "WordFunc.nsh"
 
 !define APPNAME   "Rocketify"
-!define VERSION   "1.0.0"
+!define VERSION   "0.0.2-alpha"
+!define VERSION_NUM "0.0.2.0"   ; Windows needs four plain numbers
 !define PUBLISHER "Rocketify (unofficial)"
 !define REGKEY    "Software\Microsoft\Windows\CurrentVersion\Uninstall\Rocketify"
 
@@ -30,7 +31,7 @@ InstallDir ""
 ShowInstDetails show
 ShowUninstDetails show
 
-VIProductVersion "${VERSION}.0"
+VIProductVersion "${VERSION_NUM}"
 VIAddVersionKey "ProductName" "${APPNAME}"
 VIAddVersionKey "FileDescription" "${APPNAME} Setup (Steam and Epic Games)"
 VIAddVersionKey "FileVersion" "${VERSION}"
@@ -395,6 +396,8 @@ Section "Uninstall"
   Delete "$INSTDIR\rocketify.dll"
   Delete "$INSTDIR\rocketify.log"
   Delete "$INSTDIR\rocketify.ini"
+  Delete "$INSTDIR\splash_trace.log"
+  Delete "$INSTDIR\splash_curve.txt"
   Delete "$INSTDIR\mods\hello_mod.dll"
   RMDir "$INSTDIR\mods"          ; only if empty - your own mods are kept
   Delete "$INSTDIR\Uninstall Rocketify.exe"
